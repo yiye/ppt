@@ -1,4 +1,4 @@
 ppt
 ===
 
-this my ppt for sharing seajs
+this is my ppt for sharing seajs
