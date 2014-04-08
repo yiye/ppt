@@ -6,22 +6,281 @@
 	<link rel="stylesheet" type="text/css" href="css/reset.css">
 	<link rel="stylesheet" type="text/css" href="css/shCore.css">
 	<link rel="stylesheet" type="text/css" href="css/shCoreRDark.css">
-	<link rel="stylesheet" type="text/css" href="css/shThemeRDark.css">
+	<!-- <link rel="stylesheet" type="text/css" href="css/shThemeDefault.css"> -->
 	<link rel="stylesheet" type="text/css" href="css/ppt.css">
 </head>
 <body>
+	<div class="bg"></div>
 	<div id="impress">
 		<div class="step" data-x="0" data-y="0">
-			<div class="">
-				
+			<div class="cover">
+				Seajs
 			</div>	
-			<pre class="brush: js">
+			<!-- <pre class="brush: js">
 				var a = c;
 				function a(){
-
+			
 				}
-			</pre>
+			</pre> -->
 		</div>
+		<div class="step" data-x="1600" data-y="0">
+			<h2 class="title">HOW</h2>
+			<div class="content">
+				<p>seajs的使用其实就两句话:</p>
+				<ul>
+					<li>通过 exports 暴露接口</li>
+					<li>通过 require 引入依赖</li>
+				</ul>
+			</div>
+		</div>
+		<div class="step" data-x="1600" data-y="1600">
+			<h2 class="title">exports</h2>
+			<div class="content">
+				<pre class="brush: js">
+					//a.js
+					define(function(require, exports, module){
+						// 通过 exports 对外提供接口
+  						exports.doSomething = funciton(){
+  							console.log("I'm in a");
+  						}
+  						// 或者通过 module.exports 提供整个接口
+  						//module.exports = {}
+					}
+				</pre>
+				<p>这里有个坑</p>
+			</div>
+		</div>
+		<div class="step" data-x="2600" data-y="2600" data-z="-3000" data-scale="1">
+			<h2 class="title">坑1</h2>
+			<div class="content">
+				<p>exports 仅仅是 module.exports 的一个<strong>引用</strong></p>
+				<pre class="brush: js">
+					define(function(require, exports){
+					  exports = {
+					    foo: 'bar',
+					    doSomething: function() {}
+					  };					
+
+					});
+				</pre>
+				<p>这种写法就相当于:</p>
+				<pre class="brush: js">
+					var a = {};
+					var b = a;
+					b = {a:"b"};
+				</pre>
+			</div>
+		</div>
+		<div class="step" data-x="1600" data-y="-2600">
+			<h2 class="title">require</h2>
+			<div class="content">
+				<pre class="brush: js">
+					//b.js
+					define(function(require, exports, module){
+						var a = require('a');//可以不带后缀的,seajs自动补全
+						a();// I'm in a
+					}
+				</pre>
+				<p>关于require有很多坑. 一定要将requere 当做是语法关键词来看</p>
+			</div>
+		</div>
+		<div class="step" data-x="1600" data-y="-2600"  data-z="-3000" data-scale="1">
+			<h2 class="title">坑1</h2>
+			<div class="content">
+				<p>模块 factory 构造方法的第一个参数 必须 命名为 require</p>
+				<pre class="brush: js">
+					// 错误！
+					define(function(req) {
+					  // ...
+					});					
+
+					// 正确！
+					define(function(require) {
+					  // ...
+					});
+				</pre>
+			</div>
+		</div>
+		<div class="step" data-x="1600" data-y="-2600"  data-z="-6000" data-scale="1">
+			<h2 class="title">坑2</h2>
+			<div class="content">
+				<p>不要重命名 require 函数，或在任何作用域中给 require 重新赋值</p>
+				<pre class="brush: js">
+					// 错误 - 重命名 "require"！
+					var req = require, mod = req("./mod");					
+
+					// 错误 - 重定义 "require"!
+					require = function() {};					
+
+					// 错误 - 重定义 "require" 为函数参数！
+					function F(require) 					
+
+					// 错误 - 在内嵌作用域内重定义了 "require"！
+					function F() {
+					  var require = function() {};
+					}
+				</pre>
+			</div>
+		</div>
+		<div class="step" data-x="1600" data-y="-2600"  data-z="-9000" data-scale="1">
+			<h2 class="title">坑3</h2>
+			<div class="content">
+				<p>require 的参数值 必须 是字符串直接量</p>
+				<pre class="brush: js">
+					// 错误！
+					require(myModule);					
+
+					// 错误！
+					require("my-" + "module");					
+
+					// 错误！
+					require("MY-MODULE".toLowerCase());					
+
+					// 正确！
+					require("my-module");
+					}
+				</pre>
+				<p>why? Sea.js 在运行 define 时，接受 factory 参数，可以通过 factory.toString() 拿到源码，再通过正则匹配 require 的方式来得到依赖信息</p>
+			</div>
+		</div>
+		<div class="step" data-x="3600" data-y="0">
+			<h2 class="title">关于模块标识问题</h2>
+			<div class="content">
+				<p>模块标识有两种:</p>
+				<ul>
+					<li>相对标识</li>
+					<pre class="brush: js">
+						// 在 http://example.com/js/a.js
+						define(function(require) {
+					 		require('./b');
+					 		// 解析为=> http://example.com/js/b.js
+						});
+						// 在 http://example.com/js/a.js
+						define(function(require) {
+					 		require('../c');
+					 		// => http://example.com/c.js
+						});
+					</pre>
+					<p>相对标识只会存在于, define 的时候</p>
+					<p>始终终相对当前页面解析</p>
+				</ul>
+			</div>
+		</div>
+		<div class="step" data-x="3600" data-y="0" data-z="-3000">
+			<h2 class="title">关于模块标识问题</h2>
+			<div class="content">
+				<ul>
+					<li>顶级标识</li>
+					<pre class="brush: js">
+						// 在config中配置 base: http://example.com/123/
+						// 在 http://example.com/js/a.js
+						define(function(require) {
+					 		require('b');
+					 		// => http://example.com/123/b.js
+						});
+						
+						// 在 http://example.com/js/a.js
+					 	seajs.use('c');
+					 	// => http://example.com/123/c.js
+					</pre>
+					<p>相对 base 基础路径解析</p>
+					<p>base的默认值为 seaj 的访问路径,且不包含:包含 seajs/x.y.z 字串</p>
+					<p>如果 sea.js 的路径是：http://example.com/assets/seajs/1.0.0/sea.js</p>
+					<p>则 base 路径是：http://example.com/assets/</p>
+
+				</ul>
+			</div>
+		</div>
+		<div class="step" data-x="3600" data-y="0" data-z="-6000">
+			<h2 class="title">关于模块标识问题</h2>
+			<div class="content">
+					<li>普通路径</li>
+					<pre class="brush: js">
+					// 假设当前页面是 http://example.com/path/to/page/index.html
+
+					// 绝对路径是普通路径：
+					require.resolve('http://cdn.com/js/a');
+  					// => http://cdn.com/js/a.js
+
+					// 根路径是普通路径：
+					require.resolve('/js/b');
+  					// => http://example.com/js/b.js
+
+					// use 中的相对路径始终是普通路径：
+					seajs.use('./c');
+ 					// => 加载的是 http://example.com/path/to/page/c.js
+
+					seajs.use('../d');
+  					// => 加载的是 http://example.com/path/to/d.js
+					</pre>
+					<p>其实就是按照普通的 SCRIPT 方式来解析</p>
+
+			</div>
+		</div>
+		<div class="step" data-x="5600" data-y="0" data-z="0">
+			<h2 class="title">ID 和路径匹配原则</h2>
+			<div class="content">
+					<pre class="brush: js">
+						//定义一个模块
+						// 文件路径是 lib/jquery.js
+						// 但是 ID 是 lib/jquery.min.js
+						// ID 和路径不匹配
+						define('lib/jquery.min', function(require, exports, module) {
+						    // jquery code
+						    exports = $;
+						});
+
+						//a.js中引用这个模块
+						seajs.use('lib/jquery', function($) {
+    						// $ === null,而且不报错,也不404
+						});
+					</pre>
+					<p>Sea.js 的模块启动接口秉承的是路径即 ID 的设计原则</p>
+					<p>所以定义模块最好用匿名模块</p>
+
+			</div>
+		</div>
+		<div class="step" data-x="7600" data-y="0" data-z="0">
+			<h2 class="title">改造jQuery插件</h2>
+			<div class="content">
+					<p>官方推荐方法</p>
+					<pre class="brush: js">
+						// jquery-plugin-abc
+						define(function(require, exports, module) {
+						  var $ = require('$');
+						  // 插件的代码
+						  $.fn.abc = function() {};
+						});
+					</pre>
+					<p>我常用的方法</p>
+					<pre class="brush: js">
+						// jquery-plugin-abc
+						define(function(require, exports, module) {
+						 return function(){
+						 	//完整插件代码
+						 }
+						});
+					</pre>
+
+			</div>
+		</div>
+		
+		<div class="step" data-x="9600" data-y="0" data-z="0">
+			<h2 class="title">关于打包</h2>
+			<div class="content">
+				<ul>
+					<li>提取依赖</li>
+					<li>连接文件</li>
+					<li>压缩</li>
+				</ul>					
+				
+			</div>
+		</div>
+		<div class="step" data-x="9600" data-y="4000" data-z="0" data-rotate-z="90">
+			<div class="thanks">thanks</div>
+		</div>
+		<div id="overview" class="step" data-x="3000" data-y="1500" data-scale="5">
+    	</div>
 	</div>
 	<script type="text/javascript" src='js/impress.js'></script>
 	<script type="text/javascript" src="js/shCore.js"></script>
